@@ -7,11 +7,17 @@
 const hre = require("hardhat");
 
 async function main() {
-  const Assessment = await hre.ethers.getContractFactory("SimpleBankingSystem");
-  const assessment = await Assessment.deploy();
- await assessment.deployed();
+  // Get the contract factory for the TicketBooking contract
+  const TicketBooking = await hre.ethers.getContractFactory("TicketBooking");
+  
+  // Deploy the TicketBooking contract
+  const ticketBooking = await TicketBooking.deploy();
+  
+  // Wait for the contract to be deployed
+  await ticketBooking.deployed();
 
-  //console.log(`A contract with balance of ${initBalance} eth deployed to ${assessment.address}`);
+  // Log the deployed contract address
+  console.log(`TicketBooking contract deployed to: ${ticketBooking.address}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

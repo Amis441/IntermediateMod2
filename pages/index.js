@@ -1,19 +1,19 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import SimpleBankingSystemABI from "../artifacts/contracts/Assessment.sol/SimpleBankingSystem.json";
+import ticketBooking_abi from "../artifacts/contracts/Assessment.sol/TicketBooking.json";
 
 export default function HomePage() {
   const [ethWallet, setEthWallet] = useState(undefined);
   const [account, setAccount] = useState(undefined);
-  const [bankingSystem, setBankingSystem] = useState(undefined);
-  const [depositAmount, setDepositAmount] = useState(0);
-  const [withdrawAmount, setWithdrawAmount] = useState(0);
-  const [transferAmount, setTransferAmount] = useState(0);
-  const [transferRecipient, setTransferRecipient] = useState("");
-  const [balance, setBalance] = useState(undefined);
+  const [ticketBooking, setTicketBooking] = useState(undefined);
+  const [tickets, setTickets] = useState([]);
+  const [ticketId, setTicketId] = useState("");
+  const [eventName, setEventName] = useState("");
+  const [seatNumber, setSeatNumber] = useState(0);
+  const [newOwner, setNewOwner] = useState("");
 
-  const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Replace with your contract address
-  const bankingSystemABI = SimpleBankingSystemABI.abi;
+  const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Update with your contract address
+  const ticketBookingABI = ticketBooking_abi.abi;
 
   const getWallet = async () => {
     if (window.ethereum) {
@@ -28,10 +28,7 @@ export default function HomePage() {
 
   const handleAccount = (account) => {
     if (account) {
-      console.log("Account connected: ", account);
       setAccount(account[0]);
-    } else {
-      console.log("No account found");
     }
   };
 
@@ -44,135 +41,113 @@ export default function HomePage() {
     const accounts = await ethWallet.request({ method: "eth_requestAccounts" });
     handleAccount(accounts);
 
-    // once wallet is set we can get a reference to our deployed contract
-    getBankingSystemContract();
+    getTicketBookingContract();
   };
 
-  const getBankingSystemContract = () => {
+  const getTicketBookingContract = () => {
     const provider = new ethers.providers.Web3Provider(ethWallet);
     const signer = provider.getSigner();
-    const bankingSystemContract = new ethers.Contract(
-      contractAddress,
-      bankingSystemABI,
-      signer
-    );
-
-    setBankingSystem(bankingSystemContract);
+    const ticketBookingContract = new ethers.Contract(contractAddress, ticketBookingABI, signer);
+    setTicketBooking(ticketBookingContract);
   };
 
-  const deposit = async () => {
-    if (bankingSystem && depositAmount > 0) {
-      let tx = await bankingSystem.deposit({
-        value: ethers.utils.parseEther(depositAmount.toString()),
-      });
-      await tx.wait();
-      alert("Deposit successful");
-      getBalance();
+  const getAllTickets = async () => {
+    if (ticketBooking) {
+      const allTickets = await ticketBooking.getAllTickets();
+      const formattedTickets = allTickets.map(ticket => ({
+        id: ticket.id.toString(),
+        owner: ticket.owner,
+        eventName: ticket.eventName,
+        seatNumber: ticket.seatNumber.toString() // Convert BigNumber to string
+      }));
+      setTickets(formattedTickets);
     }
   };
 
-  const withdraw = async () => {
-    if (bankingSystem && withdrawAmount > 0) {
-      let tx = await bankingSystem.withdraw(
-        ethers.utils.parseEther(withdrawAmount.toString())
-      );
-      await tx.wait();
-      alert("Withdrawal successful");
-      getBalance();
+  const bookTicket = async () => {
+    if (ticketBooking && ticketId && eventName && seatNumber > 0) {
+      await ticketBooking.bookTicket(ticketId, eventName, seatNumber);
+      getAllTickets(); // Refresh the ticket list
     }
   };
 
-  const transfer = async () => {
-    if (bankingSystem && transferRecipient && transferAmount > 0) {
-      let tx = await bankingSystem.transfer(
-        transferRecipient,
-        ethers.utils.parseEther(transferAmount.toString())
-      );
-      await tx.wait();
-      alert("Transfer successful");
-      getBalance();
+  const cancelTicket = async () => {
+    if (ticketBooking && ticketId) {
+      await ticketBooking.cancelTicket(ticketId);
+      getAllTickets();
     }
   };
 
-  const getBalance = async () => {
-    if (bankingSystem) {
-      const balance = await bankingSystem.getBalance();
-      setBalance(ethers.utils.formatEther(balance));
+  const updateTicket = async () => {
+    if (ticketBooking && ticketId && seatNumber > 0) {
+      await ticketBooking.updateTicket(ticketId, seatNumber);
+      getAllTickets();
     }
   };
 
   const initUser = () => {
     if (!ethWallet) {
-      return <p>Please install Metamask in order to use this system.</p>;
+      return <p>Please install MetaMask in order to use this Ticket Booking System.</p>;
     }
 
     if (!account) {
-      return (
-        <button onClick={connectAccount} className="btn">
-          Please connect your Metamask wallet
-        </button>
-      );
+      return <button onClick={connectAccount}>Please connect your MetaMask wallet</button>;
     }
 
     return (
-      <div className="banking-system">
-        <p className="account-info">Your Account: {account}</p>
-        <div className="form-group">
-          <h3>Deposit</h3>
-          <input
-            type="number"
-            value={depositAmount}
-            onChange={(e) => setDepositAmount(parseFloat(e.target.value))}
-            placeholder="Amount (ETH)"
-            className="input"
-          />
-          <button onClick={deposit} className="btn">
-            Deposit
-          </button>
+      <>
+        <div>
+          <h2>Connected Account: {account}</h2>
+          <button onClick={getAllTickets}>Get All Tickets</button>
+
+          <div>
+            <h3>Book or Update Ticket</h3>
+            <input
+              type="number"
+              placeholder="Ticket ID"
+              value={ticketId}
+              onChange={(e) => setTicketId(e.target.value)}
+            />
+            <input
+              type="text"
+              placeholder="Event Name"
+              value={eventName}
+              onChange={(e) => setEventName(e.target.value)}
+            />
+            <input
+              type="number"
+              placeholder="Seat Number"
+              value={seatNumber}
+              onChange={(e) => setSeatNumber(Number(e.target.value))}
+            />
+            <button onClick={bookTicket}>Book Ticket</button>
+            <button onClick={updateTicket}>Update Seat Number</button>
+            <button onClick={cancelTicket}>Cancel Ticket</button>
+          </div>
+
+          <h3>All Tickets:</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Ticket ID</th>
+                <th>Owner</th>
+                <th>Event Name</th>
+                <th>Seat Number</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tickets.map((ticket, index) => (
+                <tr key={index}>
+                  <td>{ticket.id}</td>
+                  <td>{ticket.owner}</td>
+                  <td>{ticket.eventName}</td>
+                  <td>{ticket.seatNumber}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-        <div className="form-group">
-          <h3>Withdraw</h3>
-          <input
-            type="number"
-            value={withdrawAmount}
-            onChange={(e) => setWithdrawAmount(parseFloat(e.target.value))}
-            placeholder="Amount (ETH)"
-            className="input"
-          />
-          <button onClick={withdraw} className="btn">
-            Withdraw
-          </button>
-        </div>
-        <div className="form-group">
-          <h3>Transfer</h3>
-          <input
-            type="text"
-            value={transferRecipient}
-            onChange={(e) => setTransferRecipient(e.target.value)}
-            placeholder="Recipient Address"
-            className="input"
-          />
-          <input
-            type="number"
-            value={transferAmount}
-            onChange={(e) => setTransferAmount(parseFloat(e.target.value))}
-            placeholder="Amount (ETH)"
-            className="input"
-          />
-          <button onClick={transfer} className="btn">
-            Transfer
-          </button>
-        </div>
-        <div className="form-group">
-          <h3>Get Balance</h3>
-          <button onClick={getBalance} className="btn">
-            Get Balance
-          </button>
-          {balance !== undefined && (
-            <p className="balance-info">Balance: {balance} ETH</p>
-          )}
-        </div>
-      </div>
+      </>
     );
   };
 
@@ -180,74 +155,5 @@ export default function HomePage() {
     getWallet();
   }, []);
 
-  return (
-    <main className="container">
-      <header>
-        <h1>Welcome to the Simple Banking System!</h1>
-      </header>
-      {initUser()}
-      <style jsx>{`
-  body {
-    margin: 0;
-    padding: 0;
-    height: 100vh; /* Full viewport height */
-    background-image: url('/bg.jpg'); /* Your background image */
-    background-size: cover; /* Ensures the image covers the entire screen */
-    background-position: center;
-    background-repeat: no-repeat; /* No repetition of the image */
-    display: flex;
-    justify-content: center; /* Horizontally center the form */
-    align-items: center; /* Vertically center the form */
-    font-family: Arial, sans-serif;
-  }
-
-  .container {
-    text-align: center;
-    max-width: 600px;
-    padding: 30px;
-    background: rgba(0, 0, 0, 0.7); /* Semi-transparent dark background for readability */
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    color: #fff; /* White text for better contrast */
-  }
-
-  header h1 {
-    color: #f8f9fa; /* Light color for the header */
-    margin-bottom: 20px;
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    margin-top: 15px;
-  }
-
-  input {
-    padding: 10px;
-    border-radius: 5px;
-    border: none;
-    width: 100%;
-    max-width: 400px;
-  }
-
-  button {
-    padding: 10px;
-    border: none;
-    border-radius: 5px;
-    background-color: #007bff;
-    color: white;
-    cursor: pointer;
-    margin-top: 10px;
-    width: 150px; /* Set width for consistent button sizing */
-  }
-
-  button:hover {
-    background-color: #0056b3;
-  }
-`}</style>
-
-    </main>
-  );
+  return <main>{initUser()}</main>;
 }

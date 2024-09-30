@@ -1,56 +1,100 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.9;
 
-contract SimpleBankingSystem {
+contract TicketBooking {
+    address public owner;
 
-    // Event to log a new account creation
-    event AccountCreated(address accountHolder);
+    struct Ticket {
+        uint256 id;
+        address owner;
+        string eventName;
+        uint256 seatNumber;
+    }
+
+    Ticket[] public tickets;
+    mapping(uint256 => Ticket) public ticketIdToTicket;
+
+    event TicketBooked(uint256 ticketId, address owner, string eventName, uint256 seatNumber);
+    event TicketCancelled(uint256 ticketId);
+    event TicketUpdated(uint256 ticketId, uint256 newSeatNumber);
     
-    // Event to log a deposit transaction
-    event Deposited(address accountHolder, uint256 amount);
-    
-    // Event to log a withdrawal transaction
-    event Withdrawn(address accountHolder, uint256 amount);
-    
-    // Event to log a transfer transaction
-    event Transferred(address from, address to, uint256 amount);
 
-    mapping(address => uint256) public balances;
-
-    // Function to create a new account
-    function createAccount() public {
-        require(balances[msg.sender] == 0, "Account already exists");
-        emit AccountCreated(msg.sender);
+    constructor() {
+        owner = msg.sender;
     }
 
-    // Function to deposit funds into the account
-    function deposit() public payable {
-        require(msg.value > 0, "Deposit amount must be greater than 0");
-        balances[msg.sender] += msg.value;
-        emit Deposited(msg.sender, msg.value);
+    modifier onlyOwner() {
+        require(msg.sender == owner, "You are not the owner");
+        _;
     }
 
-    // Function to withdraw funds from the account
-    function withdraw(uint256 amount) public {
-        require(amount > 0, "Withdrawal amount must be greater than 0");
-        require(balances[msg.sender] >= amount, "Insufficient balance");
-        balances[msg.sender] -= amount;
-        payable(msg.sender).transfer(amount);
-        emit Withdrawn(msg.sender, amount);
+    modifier ticketExists(uint256 _ticketId) {
+        require(ticketIdToTicket[_ticketId].owner != address(0), "Ticket does not exist");
+        _;
     }
 
-    // Function to transfer funds from the caller's account to another account
-    function transfer(address to, uint256 amount) public {
-        require(to != address(0), "Invalid recipient address");
-        require(amount > 0, "Transfer amount must be greater than 0");
-        require(balances[msg.sender] >= amount, "Insufficient balance");
-        balances[msg.sender] -= amount;
-        balances[to] += amount;
-        emit Transferred(msg.sender, to, amount);
+    modifier onlyTicketOwner(uint256 _ticketId) {
+        require(ticketIdToTicket[_ticketId].owner == msg.sender, "You do not own this ticket");
+        _;
     }
 
-    // Function to check the balance of an account
-    function getBalance() public view returns (uint256) {
-        return balances[msg.sender];
+    // Book a new ticket
+    function bookTicket(uint256 _ticketId, string memory _eventName, uint256 _seatNumber) public {
+        require(ticketIdToTicket[_ticketId].owner == address(0), "Ticket already booked");
+        Ticket memory newTicket = Ticket({
+            id: _ticketId,
+            owner: msg.sender,
+            eventName: _eventName,
+            seatNumber: _seatNumber
+        });
+
+        tickets.push(newTicket);
+        ticketIdToTicket[_ticketId] = newTicket;
+
+        emit TicketBooked(_ticketId, msg.sender, _eventName, _seatNumber);
+    }
+
+    // Cancel a ticket
+    function cancelTicket(uint256 _ticketId) public onlyTicketOwner(_ticketId) {
+        delete ticketIdToTicket[_ticketId];
+
+        for (uint256 i = 0; i < tickets.length; i++) {
+            if (tickets[i].id == _ticketId) {
+                // Shift the remaining tickets to fill the gap
+                for (uint256 j = i; j < tickets.length - 1; j++) {
+                    tickets[j] = tickets[j + 1];
+                }
+                tickets.pop();
+                break;
+            }
+        }
+
+        emit TicketCancelled(_ticketId);
+    }
+
+    // Update the seat number of a ticket
+    function updateTicket(uint256 _ticketId, uint256 _newSeatNumber) public onlyTicketOwner(_ticketId) {
+        Ticket storage ticket = ticketIdToTicket[_ticketId];
+        ticket.seatNumber = _newSeatNumber;
+
+        // Also update the array
+        for (uint256 i = 0; i < tickets.length; i++) {
+            if (tickets[i].id == _ticketId) {
+                tickets[i].seatNumber = _newSeatNumber;
+                break;
+            }
+        }
+
+        emit TicketUpdated(_ticketId, _newSeatNumber);
+    }
+
+    // View all tickets
+    function getAllTickets() public view returns (Ticket[] memory) {
+        return tickets;
+    }
+
+    // View a specific ticket by ID
+    function getTicket(uint256 _ticketId) public view ticketExists(_ticketId) returns (Ticket memory) {
+        return ticketIdToTicket[_ticketId];
     }
 }
