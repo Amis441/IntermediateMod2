@@ -1,108 +1,88 @@
+## Ticket Booking DApp
 
-# Simple Banking System
+This repository contains a decentralized ticket booking system built with Solidity and a React frontend. Users can book tickets for events, update seat numbers, and cancel their bookings via an Ethereum smart contract.
 
-This project is a decentralized banking system built on the Ethereum blockchain using **Solidity** for the smart contract and **React** for the frontend. Users can create accounts, deposit funds, withdraw funds, transfer money to other accounts, and check their balance through the web interface.
+### Features
 
-## Prerequisites
+- **Book Ticket:** Users can book a ticket for an event by specifying the ticket ID, event name, and seat number.
+- **Cancel Ticket:** Users can cancel a ticket they have previously booked.
+- **Update Ticket:** Users can update the seat number of a booked ticket.
+- **View All Tickets:** Displays a list of all booked tickets, including ticket ID, owner, event name, and seat number.
 
-To run this project locally, you need to have the following installed:
+### Smart Contract (Solidity)
 
-- **Node.js**: [Node.js](https://nodejs.org/en/)
-- **MetaMask Extension**: A wallet extension to interact with the Ethereum network. [MetaMask](https://metamask.io/)
-- **Hardhat**: To compile, deploy, and test the smart contract. [Hardhat](https://hardhat.org/)
-  
-## Installation
+The Solidity smart contract (`TicketBooking.sol`) manages ticket booking and cancellation. The contract has the following main features:
 
-1. **Clone the repository**:
+- `bookTicket`: Books a new ticket if the ID is not already taken.
+- `cancelTicket`: Cancels a ticket owned by the caller and removes it from the list.
+- `updateTicket`: Updates the seat number of an existing ticket.
+- `getAllTickets`: Retrieves all tickets booked on the platform.
+
+### Frontend (React)
+
+The React frontend interacts with the smart contract via MetaMask and allows users to book, cancel, and update tickets. The app also displays a table of all currently booked tickets.
+
+#### Key React Components:
+
+- **`Index`**: The main component that allows users to interact with the smart contract.
+
+### Getting Started
+
+1. **Clone the repository:**
+
    ```bash
-   git clone https://github.com/Amis441/simple-banking-system.git
-   cd simple-banking-system
+   git clone https://github.com/Amis441/IntermediateMod2.git
+   cd ticket-booking-dapp
    ```
 
-2. **Install dependencies**:
-   Install the necessary npm packages.
+2. **Install dependencies:**
+
+   Navigate to the React frontend directory and install the necessary dependencies:
+
+   ```bash
+   cd frontend
+   npm install
+   ```
+
+3. **Set up the smart contract:**
+
+   - The smart contract (`TicketBooking.sol`) is written in Solidity and compiled using Hardhat or a similar tool.
+   - Deploy the smart contract to an Ethereum-compatible network .
+   - Update the contract address in the `index.js` file:
+
+4. **Run the React app:**
+
+   Start the React development server:
+
+   ```bash
+   npm run dev
+   ```
+
+   The app will be available at `http://localhost:3000`.
+
+### Interacting with the DApp
+
+- **Connect MetaMask**: Ensure you have MetaMask installed and connected to the correct network. Click "Connect Wallet" to link your MetaMask account to the app.
+- **Book a Ticket**: Enter a ticket ID, event name, and seat number, then click "Book Ticket".
+- **Update Seat Number**: To update a seat number for an existing ticket, enter the ticket ID and new seat number, then click "Update Seat Number".
+- **Cancel a Ticket**: Enter the ticket ID and click "Cancel Ticket" to remove it from the list.
+- **View All Tickets**: Click "Get All Tickets" to retrieve and display all booked tickets.
+
+### Smart Contract Deployment
+
+If you need to deploy the smart contract using Hardhat, follow these steps:
+
+1. **Install Dependencies**:
+
    ```bash
    npm install
    ```
 
-3. **Configure Hardhat**:
-   - If you are using a local Ethereum network, ensure that Hardhat is set up properly in your project.
+2. **Compile and deploy the contract**:
 
-4. **Compile the Smart Contract**:
+   Update `hardhat.config.js` to point to your network. Then compile and deploy the contract using:
+
    ```bash
-   npx hardhat compile
+   npx hardhat node
+   npx hardhat run --network localhost scripts/deploy.js
    ```
-
-5. **Deploy the Smart Contract**:
-   Deploy the smart contract to your local Ethereum network or public testnet.
-   ```bash
-   npx hardhat run scripts/deploy.js --network your_network
-   ```
-   Update the contract address in the `index.js` file.
-
-## Running the Project
-
-1. **Start the React Frontend**:
-   ```bash
-   npm run dev
-   ```
-   This will launch the React application on `localhost:3000`.
-
-2. **Connect to MetaMask**:
-   Make sure you are connected to the same Ethereum network on MetaMask that the smart contract was deployed to (e.g., Ganache or Ropsten).
-
-## Features
-
-- **Create an Account**: Users can create a new banking account linked to their Ethereum address.
-- **Deposit Funds**: Users can deposit Ether into their account.
-- **Withdraw Funds**: Users can withdraw Ether from their account.
-- **Transfer Funds**: Users can transfer Ether to another account.
-- **Check Balance**: Users can view the balance of their account.
-
-## Smart Contract
-
-The smart contract `SimpleBankingSystem.sol` is deployed on the Ethereum blockchain and includes the following functionality:
-
-- **Account Creation**: Users can create an account by calling the `createAccount()` function.
-- **Deposit**: Users can deposit Ether using the `deposit()` function, which updates their balance.
-- **Withdraw**: The `withdraw()` function allows users to withdraw Ether from their balance.
-- **Transfer**: Users can transfer Ether to another account using the `transfer()` function.
-- **Get Balance**: The `getBalance()` function returns the balance of the user's account.
-
-### Smart Contract Events:
-
-- `AccountCreated`: Emitted when a new account is created.
-- `Deposited`: Emitted when a deposit is made.
-- `Withdrawn`: Emitted when a withdrawal is made.
-- `Transferred`: Emitted when a transfer is completed.
-
-## Frontend Functionality
-
-The React frontend provides a simple interface for interacting with the smart contract:
-
-- **Deposit Funds**: Allows users to enter an amount in Ether and deposit it into their account.
-- **Withdraw Funds**: Users can withdraw a specified amount from their balance.
-- **Transfer Funds**: Users can transfer Ether to another Ethereum address.
-- **View Balance**: Users can retrieve and display their current balance in Ether.
-
-### Key Components:
-
-- **MetaMask Integration**: The project uses MetaMask for user authentication and interaction with the blockchain.
-- **ethers.js**: The Ethereum JavaScript library used to interact with the smart contract.
-
-## Usage
-
-1. **Connect MetaMask**: 
-   - On the homepage, click the **"Connect your MetaMask wallet"** button.
-   
-2. **Deposit Funds**:
-   - Enter the amount of Ether you want to deposit and click **Deposit**.
-
-3. **Withdraw Funds**:
-   - Enter the amount you want to withdraw and click **Withdraw**.
-
-4. **Transfer Funds**:
-   - Enter the recipient's Ethereum address and the amount you want to transfer, then click **Transfer**.
-
-5. **Get Balance**:
-   - Click **Get Balance** to display your current balance in Ether.
